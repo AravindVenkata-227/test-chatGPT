@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Faculty Selection</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; }
+  .subject { margin-bottom: 20px; }
+  .faculty-option { display: flex; align-items: center; margin-bottom: 5px; }
+  @media (max-width: 600px) { body { padding: 10px; } }
+</style>
+</head>
+<body>
+<h1>Faculty Selection</h1>
+<form id="studentForm">
+  <label>
+    Roll Number:
+    <input type="text" id="roll" maxlength="10" required>
+  </label>
+  <br>
+  <label>
+    Name:
+    <input type="text" id="name" required>
+  </label>
+  <div id="facultySection" style="display:none;"></div>
+  <button type="submit">Submit</button>
+</form>
+<div id="message"></div>
+<script>
+let slots = {};
+async function loadData() {
+  const res = await fetch('/data');
+  slots = await res.json();
+}
+function renderFaculties() {
+  const section = document.getElementById('facultySection');
+  section.innerHTML = '';
+  for (let i = 1; i <= 6; i++) {
+    const subjectKey = 'subject' + i;
+    const div = document.createElement('div');
+    div.className = 'subject';
+    div.innerHTML = '<h3>' + subjectKey + '</h3>';
+    for (let j = 1; j <= 3; j++) {
+      const facultyKey = 'faculty' + j;
+      const count = slots[subjectKey][facultyKey];
+      const option = document.createElement('div');
+      option.className = 'faculty-option';
+      option.innerHTML = `<label><input type="radio" name="${subjectKey}" value="${facultyKey}" required> ${facultyKey} (remaining: <span id="${subjectKey}_${facultyKey}">${count}</span>)</label>`;
+      div.appendChild(option);
+    }
+    section.appendChild(div);
+  }
+}
+document.getElementById('roll').addEventListener('input', function() {
+  const facultySection = document.getElementById('facultySection');
+  if (/^23.{8}$/.test(this.value)) { facultySection.style.display = 'block'; }
+  else { facultySection.style.display = 'none'; }
+});
+document.getElementById('studentForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const roll = document.getElementById('roll').value;
+  const name = document.getElementById('name').value;
+  if (!/^23.{8}$/.test(roll)) {
+    document.getElementById('message').textContent = 'Roll number must start with 23 and be 10 characters long';
+    return;
+  }
+  const selections = {};
+  for (let i = 1; i <= 6; i++) {
+    const subjectKey = 'subject' + i;
+    const radio = document.querySelector(`input[name="${subjectKey}"]:checked`);
+    if (!radio) {
+      document.getElementById('message').textContent = 'Select faculty for ' + subjectKey;
+      return;
+    }
+    selections[subjectKey] = radio.value;
+  }
+  const resp = await fetch('/submit', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ roll, name, selections }) });
+  const result = await resp.json();
+  if (result.success) {
+    document.getElementById('message').textContent = 'Selection submitted successfully';
+    await loadData();
+    for (let i = 1; i <= 6; i++) {
+      for (let j = 1; j <= 3; j++) {
+        const subjectKey = 'subject' + i;
+        const facultyKey = 'faculty' + j;
+        const span = document.getElementById(`${subjectKey}_${facultyKey}`);
+        if (span) span.textContent = slots[subjectKey][facultyKey];
+      }
+    }
+    document.getElementById('studentForm').reset();
+    document.getElementById('facultySection').style.display = 'none';
+  } else {
+    document.getElementById('message').textContent = result.error;
+  }
+});
+window.addEventListener('load', async () => {
+  await loadData();
+  renderFaculties();
+  document.getElementById('roll').dispatchEvent(new Event('input'));
+});
+</script>
+</body>
+</html>
