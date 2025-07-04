@@ -1,0 +1,11 @@
+{
+  "slots": {
+    "subject1": {"faculty1": 70, "faculty2": 70, "faculty3": 70},
+    "subject2": {"faculty1": 70, "faculty2": 70, "faculty3": 70},
+    "subject3": {"faculty1": 70, "faculty2": 70, "faculty3": 70},
+    "subject4": {"faculty1": 70, "faculty2": 70, "faculty3": 70},
+    "subject5": {"faculty1": 70, "faculty2": 70, "faculty3": 70},
+    "subject6": {"faculty1": 70, "faculty2": 70, "faculty3": 70}
+  },
+  "students": {}
+}
